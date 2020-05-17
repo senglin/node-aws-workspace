@@ -12,6 +12,7 @@ FROM node:14
 ARG USERNAME=node
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
+ARG NONROOT_USER=$USERNAME
 
 ARG NPM_GLOBAL=/usr/local/share/npm-global
 ENV PATH=${PATH}:${NPM_GLOBAL}/bin
@@ -95,3 +96,25 @@ RUN apt-get update \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
+    #
+    # ENABLING NON-ROOT ACCESS TO DOCKER IN THE CONTAINER
+    # https://github.com/Microsoft/vscode-dev-containers/tree/master/containers/docker-in-docker
+    # Default to root only access to the Docker socket, set up non-root init script
+    RUN touch /var/run/docker-host.sock \
+    && ln -s /var/run/docker-host.sock /var/run/docker.sock \
+    && apt-get update \
+    && apt-get -y install socat
+    #
+    # Create docker-init.sh to spin up socat
+    RUN echo '#!/bin/sh\n\
+    sudo rm -rf /var/run/docker.sock\n\
+    ((sudo socat UNIX-LISTEN:/var/run/docker.sock,fork,mode=660,user='${NONROOT_USER}' UNIX-CONNECT:/var/run/docker-host.sock) 2>&1 >> /tmp/vscr-dind-socat.log) & > /dev/null\n\
+    "$@"' >> /usr/local/share/docker-init.sh \
+    && chmod +x /usr/local/share/docker-init.sh
+    #
+    # Setting the ENTRYPOINT to docker-init.sh will configure non-root access to
+    # the Docker socket if "overrideCommand": false is set in devcontainer.json.
+    # The script will also execute CMD if you need to alter startup behaviors.
+    ENTRYPOINT [ "/usr/local/share/docker-init.sh" ]
+    CMD [ "sleep", "infinity" ]
+
