@@ -5,6 +5,11 @@
 	// The arguments when starting the Docker container. Update the destination home folder, if the remoteUser is changed.
 	"runArgs": ["-v", "${env:HOME}${env:USERPROFILE}/.aws:/root/.aws"],
 
+	// Forward the Docker socket from the current host
+	// Reference: https://github.com/Microsoft/vscode-dev-containers/tree/master/containers/docker-in-docker
+	//            https://code.visualstudio.com/docs/remote/containers-advanced
+	"mounts": [ "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" ],
+
 	// Set *default* container specific settings.json values on container create.
 	"settings": { 
 		"terminal.integrated.shell.linux": "/bin/bash"
@@ -13,6 +18,7 @@
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"dbaeumer.vscode-eslint",
+		"ms-azuretools.vscode-docker",
 		"eamodio.gitlens",
 		"donjayamanne.githistory"
 	]
