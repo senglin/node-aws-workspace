@@ -2,6 +2,9 @@
 	"name": "Node.js 14",
 	"dockerFile": "Dockerfile",
 
+	// The arguments when starting the Docker container. Update the destination home folder, if the remoteUser is changed.
+	"runArgs": ["-v", "${env:HOME}${env:USERPROFILE}/.aws:/root/.aws"],
+
 	// Set *default* container specific settings.json values on container create.
 	"settings": { 
 		"terminal.integrated.shell.linux": "/bin/bash"
@@ -9,7 +12,9 @@
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-		"dbaeumer.vscode-eslint"
+		"dbaeumer.vscode-eslint",
+		"eamodio.gitlens",
+		"donjayamanne.githistory"
 	]
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

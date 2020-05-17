@@ -73,6 +73,12 @@ RUN apt-get update \
     # Install eslint globally
     && sudo -u ${USERNAME} npm install -g eslint \
     #
+    # Install AWS CLI v2: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html
+    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && sudo ./aws/install \
+    && rm -rf aws awscliv2.zip \
+    #
     # Clean up
     && apt-get autoremove -y \
     && apt-get clean -y \
