@@ -2,8 +2,15 @@
 	"name": "Node.js 14",
 	"dockerFile": "Dockerfile",
 
+	// NOTE: The following fields have to be changes if you are changing the remoteUser
+	//       1) runArgs, .aws folder
+	//       2) overrideCommand, switch to true
+	//       3) remoteUser, uncomment to flip to using root
+	//       4) Dockerfile:USERNAME, if you would like to change the name of the remoteUser
+
+
 	// The arguments when starting the Docker container. Update the destination home folder, if the remoteUser is changed.
-	"runArgs": ["-v", "${env:HOME}${env:USERPROFILE}/.aws:/root/.aws"],
+	"runArgs": ["-v", "${env:HOME}${env:USERPROFILE}/.aws:/home/node/.aws"],
 
 	// Forward the Docker socket from the current host
 	// Reference: https://github.com/Microsoft/vscode-dev-containers/tree/master/containers/docker-in-docker

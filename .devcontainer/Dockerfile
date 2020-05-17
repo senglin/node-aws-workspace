@@ -90,12 +90,9 @@ RUN apt-get update \
     # Install Docker Compose
     && LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/compose/releases/latest" | grep -o -P '(?<="tag_name": ").+(?=")') \
     && curl -sSL "https://github.com/docker/compose/releases/download/${LATEST_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
-    && chmod +x /usr/local/bin/docker-compose \
+    && chmod +x /usr/local/bin/docker-compose
     #
-    # Clean up
-    && apt-get autoremove -y \
-    && apt-get clean -y \
-    && rm -rf /var/lib/apt/lists/*
+    #
     #
     # ENABLING NON-ROOT ACCESS TO DOCKER IN THE CONTAINER
     # https://github.com/Microsoft/vscode-dev-containers/tree/master/containers/docker-in-docker
@@ -111,6 +108,25 @@ RUN apt-get update \
     ((sudo socat UNIX-LISTEN:/var/run/docker.sock,fork,mode=660,user='${NONROOT_USER}' UNIX-CONNECT:/var/run/docker-host.sock) 2>&1 >> /tmp/vscr-dind-socat.log) & > /dev/null\n\
     "$@"' >> /usr/local/share/docker-init.sh \
     && chmod +x /usr/local/share/docker-init.sh
+    #
+    #
+    #
+    #
+    # INSTALL AWS SAM CLI
+    # Install Homebrew
+    RUN apt-get -y install ruby \
+    && sudo apt-get install build-essential \
+    && echo | sudo -u node sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)" \
+    && echo 'eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)' >> /home/${USERNAME}/.bashrc \
+    && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv) \
+    && brew tap aws/tap \
+    && brew install aws-sam-cli
+    #
+    # Clean up
+    RUN apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+    #
     #
     # Setting the ENTRYPOINT to docker-init.sh will configure non-root access to
     # the Docker socket if "overrideCommand": false is set in devcontainer.json.
