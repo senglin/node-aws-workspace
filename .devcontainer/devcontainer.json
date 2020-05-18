@@ -35,6 +35,7 @@
 	"extensions": [
 		"dbaeumer.vscode-eslint",
 		"ms-azuretools.vscode-docker",
+		"amazonwebservices.aws-toolkit-vscode",
 		"eamodio.gitlens",
 		"donjayamanne.githistory"
 	],
