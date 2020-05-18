@@ -115,7 +115,7 @@ RUN apt-get update \
     # INSTALL AWS SAM CLI
     # Install Homebrew
     RUN apt-get -y install ruby \
-    && sudo apt-get install build-essential \
+    && sudo apt-get install build-essential groff \
     && echo | sudo -u node sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)" \
     && echo 'eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)' >> /home/${USERNAME}/.bashrc \
     && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv) \
