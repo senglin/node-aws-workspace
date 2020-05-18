@@ -12,6 +12,10 @@
 	// The arguments when starting the Docker container. Update the destination home folder, if the remoteUser is changed.
 	"runArgs": ["-v", "${env:HOME}${env:USERPROFILE}/.aws:/home/node/.aws"],
 
+	"containerEnv": {
+		"SAM_CLI_TELEMETRY": "0"
+	},
+
 	// Forward the Docker socket from the current host
 	// Reference: https://github.com/Microsoft/vscode-dev-containers/tree/master/containers/docker-in-docker
 	//            https://code.visualstudio.com/docs/remote/containers-advanced
