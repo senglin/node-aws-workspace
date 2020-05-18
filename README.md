@@ -7,10 +7,11 @@
 ## Installed Frameworks
 1. AWS CLI
 2. AWS SAM CLI
-3. Docker (Docker In Docker)
-4. Git 
-5. Ruby
-6. Curl, Wget
+3. AWS Toolkit for VS Code
+4. Docker (Docker In Docker)
+5. Git 
+6. Ruby
+7. Curl, Wget
 
 ## Expectation
 1. The container application inherits host's AWS Configuration. The  `~/.aws` folder is accessibled from the container.
