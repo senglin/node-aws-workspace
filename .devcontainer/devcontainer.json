@@ -4,22 +4,23 @@
 
 	// NOTE: The following fields have to be changes if you are changing the remoteUser
 	//       1) runArgs, .aws folder
-	//       2) overrideCommand, switch to true
-	//       3) remoteUser, uncomment to flip to using root
-	//       4) Dockerfile:USERNAME, if you would like to change the name of the remoteUser
+	//       2) remoteUser, uncomment to use VSCode as root
+	//       3) Dockerfile:$USERNAME, if you would like to change the name of the remoteUser
 
 
 	// The arguments when starting the Docker container. Update the destination home folder, if the remoteUser is changed.
-	"runArgs": ["--privileged", "-v", "${env:HOME}${env:USERPROFILE}/.aws:/home/node/.aws"],
+	// --privileged is needed in the event DIND is used. Please refer to Dockerfile.
+	"runArgs": ["--privileged", "-v", "${env:HOME}${env:USERPROFILE}/.aws:/root/.aws", "-v", "${env:HOME}${env:USERPROFILE}/.aws:/home/node/.aws"],
 
 	"containerEnv": {
-		"SAM_CLI_TELEMETRY": "0"
+		"SAM_CLI_TELEMETRY": "0",  // do not send telemetry from aws sam cli tool
+		"VSC_DIND": "dind"         // options: root (disable remoteUser below), nonroot, dind (requires -privileged above)
 	},
 
 	// Forward the Docker socket from the current host
 	// Reference: https://github.com/Microsoft/vscode-dev-containers/tree/master/containers/docker-in-docker
 	//            https://code.visualstudio.com/docs/remote/containers-advanced
-	// "mounts": [ "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind" ],
+	"mounts": [ "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind" ],
 
 	// If set to true, VS Code runs the container with the ENTRYPOINT AND CMD parameters:
 	// docker run -a STDOUT -a STDERR <other parameters>
@@ -27,7 +28,7 @@
 	//            -c echo Container started ; while sleep 1; do :; done
 	// We do not want to override this, because our Dockerfile contains ENTRYPOINT and CMD parameters
 	// Uncomment this to allow non-root access to Docker in the container, make sure to not set remoteUser field.
-	// "overrideCommand": false,
+	"overrideCommand": false,
 	
 
 	// Set *default* container specific settings.json values on container create.
@@ -51,5 +52,5 @@
 	// "postCreateCommand": "yarn install",
 
 	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "node"
+	"remoteUser": "node"
 }
