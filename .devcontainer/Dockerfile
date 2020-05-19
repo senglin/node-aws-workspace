@@ -9,8 +9,8 @@ FROM node:14
 # property in devcontainer.json to use it. On Linux, the container user's GID/UIDs
 # will be updated to match your local UID/GID (when using the dockerFile property).
 # See https://aka.ms/vscode-remote/containers/non-root-user for details.
-ARG USERNAME=node
-ARG USER_UID=1000
+ARG USERNAME=vscode
+ARG USER_UID=1001
 ARG USER_GID=$USER_UID
 ARG NONROOT_USER=$USERNAME
 
@@ -83,7 +83,7 @@ RUN apt-get update \
     # Install AWS SAM CLI
     # Install Homebrew before installing aws-sam-cli
     && apt-get -y install ruby build-essential groff \
-    && echo | sudo -u node sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)" \
+    && echo | sudo -u ${USERNAME} sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)" \
     && echo 'eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)' >> /home/${USERNAME}/.bashrc \
     && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv) \
     && brew tap aws/tap \
@@ -105,51 +105,28 @@ RUN apt-get update \
     #
     # 3-WAYS TO ENABLE DOCKER IN THE CONTAINER
     # https://github.com/Microsoft/vscode-dev-containers/tree/master/containers/docker-in-docker
-    #
-    # Create docker-root-entrypoint.sh to link host docker socket to container docker socket. This is only for root access.
-    # In order to use this script, please ensure that remoteUser is set to root (or removed) in devcontainer.json file.
-    RUN echo '#!/bin/sh\n\
-    sudo ln -s /var/run/docker-host.sock /var/run/docker.sock \n\
-    echo Symbolic created at /var/run/docker.sock \n\
-    "$@"' >> /usr/local/share/docker-root-entrypoint.sh \
-    && chmod +x /usr/local/share/docker-root-entrypoint.sh
-    #
-    # Create docker-nonroot-entrypoint.sh to spin up socat, to enable non-root access
-    RUN echo '#!/bin/sh\n\
-    sudo rm -rf /var/run/docker.sock\n\
-    ((sudo socat UNIX-LISTEN:/var/run/docker.sock,fork,mode=660,user='${NONROOT_USER}' UNIX-CONNECT:/var/run/docker-host.sock) 2>&1 >> /tmp/vscr-dind-socat.log) & > /dev/null\n\
-    echo socat: UNIX-LISTEN:/var/run/docker.sock UNIX-CONNECT:/var/run/docker-host.sock \n\
-    "$@"' >> /usr/local/share/docker-nonroot-entrypoint.sh \
-    && chmod +x /usr/local/share/docker-nonroot-entrypoint.sh
-    #
-    # Create dockerd-entrypoint.sh to start dockerd in the container, please make sure that non-root users are added to docker group
-    # This requires --privileged to be set on devcontainer.json
-    RUN echo '#!/bin/sh\n\
-    ((sudo dockerd --host="unix:///var/run/docker.sock") 2>&1 >> /tmp/vscr-dockerd.log) & >/dev/null\n\
-    sudo usermod -aG docker node ${NONROOT_USER} \n\
-    echo Dockerd started \n\
-    "$@"' >> /usr/local/share/dockerd-entrypoint.sh \
-    && chmod +x /usr/local/share/dockerd-entrypoint.sh
-    #
-    #
     RUN echo '#!/bin/sh\n\
     if [ "$VSC_DIND" = "root" ] \n\
     then \n\
+        # Create docker-root-entrypoint.sh to link host docker socket to container docker socket. This is only for root access.
+        # In order to use this script, please ensure that remoteUser is set to root (or removed) in devcontainer.json file.
         sudo ln -s /var/run/docker-host.sock /var/run/docker.sock \n\
         echo Symbolic created at /var/run/docker.sock \n\
     elif [ "$VSC_DIND" = "nonroot" ] \n\
     then \n\
+        # Create docker-nonroot-entrypoint.sh to spin up socat, to enable non-root access
         sudo rm -rf /var/run/docker.sock\n\
         ((sudo socat UNIX-LISTEN:/var/run/docker.sock,fork,mode=660,user='${NONROOT_USER}' UNIX-CONNECT:/var/run/docker-host.sock) 2>&1 >> /tmp/vscr-dind-socat.log) & > /dev/null\n\
         echo socat: UNIX-LISTEN:/var/run/docker.sock UNIX-CONNECT:/var/run/docker-host.sock \n\
     else \n\
+        # Create dockerd-entrypoint.sh to start dockerd in the container, please make sure that non-root users are added to docker group
+        # This requires --privileged to be set on devcontainer.json
         ((sudo dockerd --host="unix:///var/run/docker.sock") 2>&1 >> /tmp/vscr-dockerd.log) & >/dev/null\n\
-        sudo usermod -aG docker node ${NONROOT_USER} \n\
+        sudo usermod -aG docker '${NONROOT_USER}' \n\
         echo Dockerd started \n\
     fi \n\
     "$@"' >> /usr/local/share/entrypoint.sh \
     && chmod +x /usr/local/share/entrypoint.sh
-    #
     #
     #
     #

@@ -10,7 +10,7 @@
 
 	// The arguments when starting the Docker container. Update the destination home folder, if the remoteUser is changed.
 	// --privileged is needed in the event DIND is used. Please refer to Dockerfile.
-	"runArgs": ["--privileged", "-v", "${env:HOME}${env:USERPROFILE}/.aws:/root/.aws", "-v", "${env:HOME}${env:USERPROFILE}/.aws:/home/node/.aws"],
+	"runArgs": ["--privileged", "-v", "${env:HOME}${env:USERPROFILE}/.aws:/root/.aws", "-v", "${env:HOME}${env:USERPROFILE}/.aws:/home/vscode/.aws"],
 
 	"containerEnv": {
 		"SAM_CLI_TELEMETRY": "0",  // do not send telemetry from aws sam cli tool
@@ -52,5 +52,5 @@
 	// "postCreateCommand": "yarn install",
 
 	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "node"
+	"remoteUser": "vscode"
 }
