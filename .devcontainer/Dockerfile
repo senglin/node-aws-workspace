@@ -3,6 +3,37 @@
 # Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
 #-------------------------------------------------------------------------------------------------------------
 
+FROM golang:1 AS fargatedist
+
+# Avoid warnings by switching to noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Configure apt, install packages and tools
+RUN apt-get update \
+    && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
+    #
+    # Verify git, process tools, lsb-release (common in install instructions for CLIs) installed
+    && apt-get -y install git openssh-client zip vim less iproute2 procps lsb-release upx file make \
+    #
+    # SSL dependencies
+    && apt-get -y install apt-transport-https ca-certificates gnupg2 \
+    #
+    # Clean up
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/* /tmp/gotools
+
+WORKDIR /fargate
+
+RUN git clone -b combined-fixes https://github.com/senglin/fargatecli.git .
+RUN go mod download
+RUN GOOS=linux GOARCH=amd64 go build -o fargate main.go
+
+# Switch back to dialog for any ad-hoc use of apt-get
+ENV DEBIAN_FRONTEND=dialog
+
+#-------------------------------------------------------------------------------------------------------------
+
 FROM node:14
 
 # The node image includes a non-root user with sudo access. Use the "remoteUser"
@@ -23,13 +54,15 @@ ARG INSTALL_ZSH="true"
 ARG UPGRADE_PACKAGES="true"
 ARG COMMON_SCRIPT_SOURCE="https://raw.githubusercontent.com/microsoft/vscode-dev-containers/master/script-library/common-debian.sh"
 ARG COMMON_SCRIPT_SHA="dev-mode"
+ENV VISUAL=vim
+ENV EDITOR=vim
 
 # Configure apt and install packages
 RUN apt-get update \
     && export DEBIAN_FRONTEND=noninteractive \
     #
     # Verify git, common tools / libs installed, add/modify non-root user, optionally install zsh
-    && apt-get -y install --no-install-recommends curl ca-certificates 2>&1 \
+    && apt-get -y install --no-install-recommends curl vim ca-certificates 2>&1 \
     && curl -sSL  ${COMMON_SCRIPT_SOURCE} -o /tmp/common-setup.sh \
     && ([ "${COMMON_SCRIPT_SHA}" = "dev-mode" ] || (echo "${COMMON_SCRIPT_SHA} */tmp/common-setup.sh" | sha256sum -c -)) \
     && /bin/bash /tmp/common-setup.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" \
@@ -72,10 +105,12 @@ RUN apt-get update \
     && apt-get purge -y imagemagick imagemagick-6-common \
     #
     # Install eslint globally
-    && sudo -u ${USERNAME} npm install -g eslint \
-    #
+    && sudo -u ${USERNAME} npm install -g eslint
+
+# AWS Tools
+RUN \
     # Install AWS CLI v2: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html
-    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
     && unzip awscliv2.zip \
     && sudo ./aws/install \
     && rm -rf aws awscliv2.zip \
@@ -89,8 +124,20 @@ RUN apt-get update \
     && brew tap aws/tap \
     && brew install aws-sam-cli \
     #
+    # Install AWS ECS CLI
+    && sudo curl -o /usr/local/bin/ecs-cli https://s3.cn-north-1.amazonaws.com.cn/amazon-ecs-cli/ecs-cli-linux-amd64-latest \
+    && sudo chmod +x /usr/local/bin/ecs-cli
+    #
+# Install FARGATE CLI
+COPY --from=fargatedist /fargate/fargate /usr/local/bin/
+    # && curl -L -o fargate-0.3.2-linux-amd64.zip https://github.com/awslabs/fargatecli/releases/download/0.3.2/fargate-0.3.2-linux-amd64.zip \
+    # && sudo unzip fargate-0.3.2-linux-amd64.zip -d /usr/local/bin/ \
+    # && rm -rf fargate-0.3.2-linux-amd64.zip
+
+# Docker installation
+RUN \
     # Install Docker CE CLI (and engine)
-    && apt-get install -y apt-transport-https ca-certificates curl gnupg2 lsb-release \
+    apt-get install -y apt-transport-https ca-certificates curl gnupg2 lsb-release \
     && curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
     && echo "deb [arch=amd64] https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list \
     && apt-get update \
@@ -100,12 +147,11 @@ RUN apt-get update \
     && LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/compose/releases/latest" | grep -o -P '(?<="tag_name": ").+(?=")') \
     && curl -sSL "https://github.com/docker/compose/releases/download/${LATEST_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
-    #
-    #
-    #
-    # 3-WAYS TO ENABLE DOCKER IN THE CONTAINER
-    # https://github.com/Microsoft/vscode-dev-containers/tree/master/containers/docker-in-docker
-    RUN echo '#!/bin/sh\n\
+
+
+# 3-WAYS TO ENABLE DOCKER IN THE CONTAINER
+# https://github.com/Microsoft/vscode-dev-containers/tree/master/containers/docker-in-docker
+RUN echo '#!/bin/sh\n\
     if [ "$VSC_DIND" = "root" ] \n\
     then \n\
         # Create docker-root-entrypoint.sh to link host docker socket to container docker socket. This is only for root access.
@@ -127,19 +173,17 @@ RUN apt-get update \
     fi \n\
     "$@"' >> /usr/local/share/entrypoint.sh \
     && chmod +x /usr/local/share/entrypoint.sh
-    #
-    #
-    #
-    # Clean up
-    RUN apt-get autoremove -y \
+
+
+# Clean up
+RUN apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
-    #
-    #
-    # Setting the ENTRYPOINT to [docker-root-entrypoint.sh | docker-nonroot-entrypoint.sh | dockerd-entrypoint.sh]
-    # will configure docker installation type in container
-    # when "overrideCommand": false is set in devcontainer.json.
-    # The script will also execute CMD if you need to alter startup behaviors.
-    ENTRYPOINT [ "/usr/local/share/entrypoint.sh" ]
-    CMD [ "sleep", "infinity" ]
 
+
+# Setting the ENTRYPOINT to [docker-root-entrypoint.sh | docker-nonroot-entrypoint.sh | dockerd-entrypoint.sh]
+# will configure docker installation type in container
+# when "overrideCommand": false is set in devcontainer.json.
+# The script will also execute CMD if you need to alter startup behaviors.
+ENTRYPOINT [ "/usr/local/share/entrypoint.sh" ]
+CMD [ "sleep", "infinity" ]
