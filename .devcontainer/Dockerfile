@@ -128,11 +128,14 @@ RUN \
     && sudo curl -o /usr/local/bin/ecs-cli https://s3.cn-north-1.amazonaws.com.cn/amazon-ecs-cli/ecs-cli-linux-amd64-latest \
     && sudo chmod +x /usr/local/bin/ecs-cli
     #
-# Install FARGATE CLI
+    # Install FARGATE CLI
 COPY --from=fargatedist /fargate/fargate /usr/local/bin/
     # && curl -L -o fargate-0.3.2-linux-amd64.zip https://github.com/awslabs/fargatecli/releases/download/0.3.2/fargate-0.3.2-linux-amd64.zip \
     # && sudo unzip fargate-0.3.2-linux-amd64.zip -d /usr/local/bin/ \
     # && rm -rf fargate-0.3.2-linux-amd64.zip
+    #
+    # Install script to automate the emptying of AWS S3 bucket (with object versioning enabled)
+COPY aws-s3-empty-bucket.sh /usr/local/bin/
 
 # Docker installation
 RUN \
