@@ -140,11 +140,12 @@ COPY aws-s3-empty-bucket.sh /usr/local/bin/
 # Docker installation
 RUN \
     # Install Docker CE CLI (and engine)
+    # Fix to version due to bug in 19.03.11 (https://github.com/docker/for-linux/issues/1033)
     apt-get install -y apt-transport-https ca-certificates curl gnupg2 lsb-release \
     && curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
     && echo "deb [arch=amd64] https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list \
     && apt-get update \
-    && apt-get install -y docker-ce-cli containerd.io docker-ce socat \
+    && apt-get install -y containerd.io socat docker-ce-cli=5:19.03.10\* docker-ce=5:19.03.10\* \
     #
     # Install Docker Compose
     && LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/compose/releases/latest" | grep -o -P '(?<="tag_name": ").+(?=")') \
@@ -165,12 +166,12 @@ RUN echo '#!/bin/sh\n\
     then \n\
         # Create docker-nonroot-entrypoint.sh to spin up socat, to enable non-root access
         sudo rm -rf /var/run/docker.sock\n\
-        ((sudo socat UNIX-LISTEN:/var/run/docker.sock,fork,mode=660,user='${NONROOT_USER}' UNIX-CONNECT:/var/run/docker-host.sock) 2>&1 >> /tmp/vscr-dind-socat.log) & > /dev/null\n\
+        ((sudo socat UNIX-LISTEN:/var/run/docker.sock,fork,mode=660,user='${NONROOT_USER}' UNIX-CONNECT:/var/run/docker-host.sock) >> /tmp/vscr-dind-socat.log 2>&1) & > /dev/null\n\
         echo socat: UNIX-LISTEN:/var/run/docker.sock UNIX-CONNECT:/var/run/docker-host.sock \n\
     else \n\
         # Create dockerd-entrypoint.sh to start dockerd in the container, please make sure that non-root users are added to docker group
         # This requires --privileged to be set on devcontainer.json
-        ((sudo dockerd --host="unix:///var/run/docker.sock") 2>&1 >> /tmp/vscr-dockerd.log) & >/dev/null\n\
+        ((sudo dockerd --host="unix:///var/run/docker.sock") >> /tmp/vscr-dockerd.log 2>&1) & >/dev/null\n\
         sudo usermod -aG docker '${NONROOT_USER}' \n\
         echo Dockerd started \n\
     fi \n\
