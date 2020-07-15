@@ -126,7 +126,10 @@ RUN \
     #
     # Install AWS ECS CLI
     && sudo curl -o /usr/local/bin/ecs-cli https://s3.cn-north-1.amazonaws.com.cn/amazon-ecs-cli/ecs-cli-linux-amd64-latest \
-    && sudo chmod +x /usr/local/bin/ecs-cli
+    && sudo chmod +x /usr/local/bin/ecs-cli \
+    #
+    # Install AWS AMPLIFY CLI
+    && sudo -u ${USERNAME} npm install -g @aws-amplify/cli
     #
     # Install FARGATE CLI
 COPY --from=fargatedist /fargate/fargate /usr/local/bin/
