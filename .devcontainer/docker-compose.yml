@@ -30,9 +30,10 @@
         
         volumes:
           # Update this to wherever you want VS Code to mount the folder of your project
+          # Note that $HOME and $USERPROFILE is placed together because only one variable exsts in either WIndows or POSIX environments
           - ..:/workspace:cached
-          - $USERPROFILE/.aws:/root/.aws:cached
-          - $USERPROFILE/.aws:/home/vscode/.aws:cached
+          - $HOME$USERPROFILE/.aws:/root/.aws:cached
+          - $HOME$USERPROFILE/.aws:/home/vscode/.aws:cached
           
           # Forwards the local Docker socket to the container.
           - /var/run/docker.sock:/var/run/docker-host.sock
