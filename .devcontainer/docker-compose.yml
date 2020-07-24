@@ -24,14 +24,16 @@
           - ALL
       
         environment: 
+          - WORKSPACEFOLDER=$PWD$CD
           - SAM_CLI_TELEMETRY=0     # do not send telemetry from aws sam cli tool
-          - VSC_DIND=dind           # options: root (please remove remoteUser setting in devcontainer.json), nonroot, dind (requires -privileged above)
+          - VSC_DIND=nonroot           # options: root (please remove remoteUser setting in devcontainer.json), nonroot, dind (requires -privileged above)
           - AWS_SDK_LOAD_CONFIG=1   # enable SharedConfigEnable for fargate cli (https://docs.aws.amazon.com/sdk-for-go/api/aws/session/#hdr-Sessions_options_from_Shared_Config)
         
         volumes:
           # Update this to wherever you want VS Code to mount the folder of your project
           # Note that $HOME and $USERPROFILE is placed together because only one variable exsts in either WIndows or POSIX environments
           - ..:/workspace:cached
+          - $PWD$CD:$PWD$CD:cached
           - $HOME$USERPROFILE/.aws:/root/.aws:cached
           - $HOME$USERPROFILE/.aws:/home/vscode/.aws:cached
           

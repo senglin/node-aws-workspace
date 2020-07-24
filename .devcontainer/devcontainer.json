@@ -2,7 +2,7 @@
 	"name": "AWS Node.js Template",
 	"dockerComposeFile": ["docker-compose.yml"],
 	"service": "devcontainer",
-	"workspaceFolder": "/workspace",
+	"workspaceFolder": "${localWorkspaceFolder}",
 
 	// NOTE: The following fields have to be changes if you are changing the remoteUser
 	//       1) docker-compose.yml:runArgs, .aws folder
