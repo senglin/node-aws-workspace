@@ -137,8 +137,10 @@ COPY --from=fargatedist /fargate/fargate /usr/local/bin/
     # && sudo unzip fargate-0.3.2-linux-amd64.zip -d /usr/local/bin/ \
     # && rm -rf fargate-0.3.2-linux-amd64.zip
     #
-    # Install script to automate the emptying of AWS S3 bucket (with object versioning enabled)
-COPY aws-s3-empty-bucket.sh /usr/local/bin/
+    # Install script to
+    # 1. automate the emptying of AWS S3 bucket (with object versioning enabled)
+    # 2. automate the deletion of iam users
+COPY aws-s3-empty-bucket.sh aws-iam-delete-user.sh /usr/local/bin/
 
 # Docker installation
 RUN \
